@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.3
+- Gewöhnliche WLAN-Verstärker können über `mesh[].client_name` anhand ihres Namens in `entities.clients.attributes.devices` zugeordnet werden.
+- Status wird bei vorhandener Quelle als "In Speedport-Clientliste" dargestellt; fehlender Name oder ausgefallene Datenquelle bedeutet "unbekannt", nicht automatisch offline.
+- Details zeigen Status und optionalen Gerätetyp; Mesh-RX/TX-Raten werden nicht erfunden.
+- Bestehende Router-, WLAN- und Client-Funktionen bleiben erhalten.
+
 ## v1.2.2
 - Optional `mesh[].kind: router` erzeugt ein eigenes Router-Detailfenster mit Routerstatus, Echtzeit-Download/Upload, verbundenen Geräten und konfigurierbarer Firmware
 - `mesh[].entity` kann nun den Routerstatus `OK` aus HA auswerten; physische WLAN-Verstärker benötigen für eigene Daten passende Entitäten
