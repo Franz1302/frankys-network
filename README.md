@@ -4,7 +4,7 @@ Eine anonymisierte, leicht anpassbare **Code-only-Netzwerkkarte für Home Assist
 
 Sie zeigt zentrale Netzwerkdaten in einer futuristischen HUD-Ansicht. Persönliche
 Entity-IDs werden ausschließlich in der Lovelace-Konfiguration eingetragen. Das Paket
-enthält **keine privaten IP-Adressen, MAC-Adressen, Zugangsdaten, QR-Dateien oder Videos**.
+enthält **keine privaten IP-Adressen, MAC-Adressen, Zugangsdaten oder QR-Dateien**.
 
 ## Enthalten
 
@@ -187,6 +187,10 @@ entfernt `entities.topology` und den gesamten `mesh:`-Block.
 
 ## Hintergrund
 
+Ein eigenes MP4-Video ist optional. Sobald `dist/JARVIS_Netzwerk_Loop_Crossfade.mp4` im Repository hinterlegt und die Karte über HACS aktualisiert wurde, kann das Originalvideo direkt mit `background: /hacsfiles/frankys-network/JARVIS_Netzwerk_Loop_Crossfade.mp4` aktiviert werden. HACS übernimmt zusätzliche Medien-Dateien gemeinsam mit `frankys-network.js` aus `dist/`.
+
+Bis dahin bleibt der neutrale CSS-Hintergrund aktiv.
+
 Ein eigenes MP4-Video ist optional:
 
 ```yaml
@@ -215,7 +219,7 @@ Der JavaScript-Code ist bytegleich zur hochgeladenen v1.1-SHARE-Datei. HACS-Meta
 Es fand keine Installation oder Prüfung in einer echten Home-Assistant-/HACS-Instanz statt. Eine Mindestversion wird ohne entsprechenden Kompatibilitätstest nicht behauptet.
 Die Uhr aktualisiert sich bei Home-Assistant-Zustandsupdates; es gibt keinen eigenen Uhr-Timer. Für schmale Mobilansichten ist die großflächige Karte nur eingeschränkt geeignet.
 
-Das zusätzlich auf ZIP-Wurzelebene enthaltene `JARVIS_Netzwerk_Loop_Crossfade.mp4` gehört laut ursprünglicher Dokumentation nicht zum Code-Paket und wird hier nicht weitergegeben. Der neutrale Hintergrund funktioniert ohne Video; ein eigener lokaler Hintergrund bleibt konfigurierbar.
+Das ursprüngliche `JARVIS_Netzwerk_Loop_Crossfade.mp4` ist nicht in der JavaScript-Datei eingebettet. Die HACS-Struktur ist für die gemeinsame Installation aus `dist/` vorbereitet; das Video muss noch als eigene Datei in `dist/` veröffentlicht werden. Der neutrale Hintergrund funktioniert ohne Video; ein eigener lokaler Hintergrund bleibt konfigurierbar.
 Die öffentliche Dateiauswahl enthält nur Karten-Code, Lizenz, Dokumentation, generische Beispiele, HACS-Metadaten und Prüfdateien. Copyright-Name und Lizenzhinweise bleiben erhalten; persönliche HA-Konfigurationen wurden nicht ausgelesen oder geändert.
 
 ## Lizenz
