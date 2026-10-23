@@ -1,6 +1,6 @@
-# Frankys_Stuff Network v1.3.0 — Steve / Speedport Smart 4
+# Frankys_Stuff Network v1.3.1 — Steve / Speedport Smart 4
 
-**v1.3.0 – Konfigurierbare LTE-/Hybrid-HUDs und automatische Clientliste** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
+**v1.3.1 – Routerstatus und weitere Speedport-Netzwerkgeräte** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
 
 ## Bereits jetzt
 
@@ -15,6 +15,29 @@
 2. Vorhandene Entity-IDs **nur in** `entities`, `wifi[].entity`, `actions[].entity`, `mesh[].topology_name` bzw. `mesh[].entity` und `clients[]` eintragen.
 3. `public_mode: false` setzen. Nicht unterstützte Sensorfelder (z. B. CPU, kumuliertes Datenvolumen) leer lassen; HUD zeigt dann `—`.
 4. Die Speedport-Integration muss einen Topologie-Sensor mit `attributes.mesh_nodes` liefern, damit alle Linkraten/Mesh-Details automatisch befüllt werden. Sonst können einzelne Mesh-Tracker zugeordnet werden, aber fehlende Linkdaten werden nicht erfunden.
+
+## Speedport-Geräte statt Platzhalter und Routerstatus (v1.3.1)
+
+Jede freie Netzwerkposition `mesh:` kann ohne weitere Zugangsdaten über ihren exakten Namen im `devices`-Attribut des Zählsensors `entities.clients` befüllt werden. Für **gewöhnliche Netzwerkgeräte** (z. B. NAS, Server) verwendet man `kind: device` und `client_name`:
+
+```yaml
+status_mode: router
+entities:
+  connection: sensor.DEIN_ROUTER_STATUS
+  clients: sensor.DEINE_VERBUNDENEN_GERAETE
+mesh:
+  - label: Router
+    kind: router
+    entity: sensor.DEIN_ROUTER_STATUS
+  - label: Netzwerkgerät
+    kind: device
+    client_name: EXAKTER_GERAETENAME_AUS_SPEEDPORT
+    connection_label: Netzwerkgerät
+```
+
+Diese YAML ist **nur ein Ausschnitt** zur Ergänzung bestehender Konfigurationen; existierende Abschnitte nicht doppelt anlegen. `status_mode: router` deutet `entities.connection` als *Routerstatus*: z. B. `OK` → **Router OK**, unbekannt → **Routerstatus unbekannt**. Das ist bewusst **kein Test der Internetverbindung oder anderer Geräte**. Ohne `status_mode: router` bleibt das bisherige Verhalten.
+
+Das Popup eines `kind: device` zeigt Name, Gerätekategorie (vom Benutzer), erkannten Zustand sowie IP und MAC aus dem Speedport-Sensor. Es behauptet keine Client-Zuordnung oder Linkgeschwindigkeit. Wenn ein Gerät nicht im aktuell verfügbaren Attribut enthalten ist, ist sein Status unbekannt (nicht automatisch offline). Persönliche Gerätenamen/Adressen gehören **ausschließlich** in die lokale Karten-YAML; das öffentliche Repo enthält nur generische Beispiele.
 
 ## LTE-/Hybrid-HUDs (v1.3.0)
 
