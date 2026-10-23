@@ -1,4 +1,4 @@
-# Frankys_Stuff Network v1.2.1 — Steve / Speedport Smart 4
+# Frankys_Stuff Network v1.2.2 — Steve / Speedport Smart 4
 
 **v1.2.1 – Netzwerkkarte mit automatischer Clientliste** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
 
@@ -15,6 +15,24 @@
 2. Vorhandene Entity-IDs **nur in** `entities`, `wifi[].entity`, `actions[].entity`, `mesh[].topology_name` bzw. `mesh[].entity` und `clients[]` eintragen.
 3. `public_mode: false` setzen. Nicht unterstützte Sensorfelder (z. B. CPU, kumuliertes Datenvolumen) leer lassen; HUD zeigt dann `—`.
 4. Die Speedport-Integration muss einen Topologie-Sensor mit `attributes.mesh_nodes` liefern, damit alle Linkraten/Mesh-Details automatisch befüllt werden. Sonst können einzelne Mesh-Tracker zugeordnet werden, aber fehlende Linkdaten werden nicht erfunden.
+
+## Router ohne Mesh-Topologie (v1.2.2)
+
+Normale WLAN-Verstärker bilden nicht zwingend ein von Home Assistant auslesbares Mesh. Deshalb kann ein Overlay-Knoten optional als Router konfiguriert werden:
+
+```yaml
+mesh:
+  - label: Router
+    kind: router
+    entity: sensor.DEIN_ROUTER_STATUS
+    model: Routermodell
+    connection_label: "Mobilfunk / Hybrid (manuelle Angabe)"
+    firmware: "Firmware-Version (manuelle Angabe)"
+  - label: WLAN-Verstärker
+    entity: device_tracker.DEIN_VERSTAERKER
+```
+
+Der Router-Dialog verwendet dabei automatisch die vorhandenen `entities.download`, `entities.upload` und `entities.clients` für **Live-Download**, **Live-Upload** und **Gerätezahl**; `mesh[].entity` liefert den Routerstatus. `connection_label` und `firmware` sind manuelle Beschriftungen und werden **nicht automatisch aktualisiert**. Bei normalen Verstärkern ist eine HA-Entität optional; ohne eigene Datenquelle bleibt der Zustand unbekannt. Internetdurchsatz ist keine Mesh-Linkgeschwindigkeit. Andere HUDs bleiben unverändert.
 
 ## Automatische Clientliste
 
