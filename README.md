@@ -1,4 +1,4 @@
-# Frankys_Stuff Network v1.3.1 — Steve / Speedport Smart 4
+# Frankys_Stuff Network v1.3.2 — Steve / Speedport Smart 4
 
 **v1.3.1 – Routerstatus und weitere Speedport-Netzwerkgeräte** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
 
@@ -15,6 +15,25 @@
 2. Vorhandene Entity-IDs **nur in** `entities`, `wifi[].entity`, `actions[].entity`, `mesh[].topology_name` bzw. `mesh[].entity` und `clients[]` eintragen.
 3. `public_mode: false` setzen. Nicht unterstützte Sensorfelder (z. B. CPU, kumuliertes Datenvolumen) leer lassen; HUD zeigt dann `—`.
 4. Die Speedport-Integration muss einen Topologie-Sensor mit `attributes.mesh_nodes` liefern, damit alle Linkraten/Mesh-Details automatisch befüllt werden. Sonst können einzelne Mesh-Tracker zugeordnet werden, aber fehlende Linkdaten werden nicht erfunden.
+
+## Zusätzlicher Access Point ohne Herstellerzugang (v1.3.2)
+
+Wenn ein Access Point nicht eindeutig mit seinem Gerätenamen in der Speedport-Clientliste auftaucht, kann er über die lokal bereits bekannte IPv4-Adresse eingetragen werden. Eine Anmeldung beim Access Point ist **nicht nötig**:
+
+```yaml
+mesh:
+  # ... bisherige Router- und Geräteknoten unverändert ...
+  - label: Weiterer Access Point
+    kind: access_point
+    client_ip: 192.0.2.227
+    model: Access Point
+    connection_label: Access Point
+    firmware: "Firmware laut Gerätestatus"
+    ssid: "SSID laut Gerätestatus"
+    mode: AP
+```
+
+Das achte Gerät erhält eine eigene, zusätzliche Position in der Netzwerkgrafik, sodass keiner der bisherigen sieben Knoten entfernt werden muss. Die Karte versucht, `client_ip` mit `entities.clients.attributes.devices[].ip` abzugleichen; nur eine erfolgreiche aktuelle Übereinstimmung ergibt einen grünen Erkennungsstatus. Andernfalls bleibt der Status **unbekannt**, während die manuell angegebene IP im Popup sichtbar bleibt. Firmware, SSID und Betriebsart sind **manuelle Momentaufnahmen**, keine Live-Messungen. CPU, RAM, Betriebszeit und Clientzuordnung werden nicht erfunden. Im öffentlichen Repository nur generische Beispieladressen verwenden und die echte IP ausschließlich in der lokalen Karten-YAML eintragen.
 
 ## Speedport-Geräte statt Platzhalter und Routerstatus (v1.3.1)
 
