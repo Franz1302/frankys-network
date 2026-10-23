@@ -1,0 +1,66 @@
+# Steve / Speedport Smart 4 — Vollständige v1.2, bis zum Routerzugang Demo.
+# Alle Sensorfelder sind absichtlich leer; nach Einrichtung der Speedport-Integration
+# müssen nur die tatsächlich vorhandenen Entity-IDs eingesetzt werden.
+type: custom:frankys-network-card
+title: "Steve´s"
+subtitle: NETWORK
+background: /local/JARVIS_Netzwerk_Loop_Crossfade.mp4
+public_mode: true
+throughput_unit: auto
+dsl_unit: auto
+volume_unit: auto
+uptime_mode: start_time
+entities:
+  download: ""
+  upload: ""
+  dsl_down: ""
+  dsl_up: ""
+  cpu_temp: ""
+  uptime: ""
+  sent: ""
+  received: ""
+  clients: ""
+  connection: ""
+  guest_qr: ""
+  topology: ""
+wifi:
+  - label: Wi-Fi 2,4 GHz
+    entity: ""
+  - label: Wi-Fi 5 GHz
+    entity: ""
+  - label: Gast-WLAN
+    entity: ""
+actions:
+  - label: Neu verbinden
+    description: Internetverbindung erneuern
+    icon: mdi:sync
+    entity: ""
+  - label: Neu starten
+    description: Router neu starten
+    icon: mdi:power
+    entity: ""
+    danger: true
+    confirm: Router wirklich neu starten?
+mesh:
+  - label: Speedport Smart 4
+    topology_name: ""
+    entity: ""
+  - label: NODE A
+    topology_name: ""
+    entity: ""
+  - label: NODE B
+    topology_name: ""
+    entity: ""
+  - label: NODE C
+    topology_name: ""
+    entity: ""
+  - label: REPEATER
+    topology_name: ""
+    entity: ""
+  - label: MESH ADAPTER
+    topology_name: ""
+    entity: ""
+  - label: NODE D
+    topology_name: ""
+    entity: ""
+clients: []

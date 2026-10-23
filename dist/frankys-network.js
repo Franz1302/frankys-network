@@ -1,5 +1,5 @@
 /*
- * Frankys_Stuff Network v1.1
+ * Frankys_Stuff Network v1.2
  * Copyright © 2026 Franz Schwenninger
  * Licensed under the PolyForm Noncommercial License 1.0.0.
  * Required Notice: Copyright © 2026 Franz Schwenninger
@@ -18,32 +18,52 @@ class FrankysNetworkCard extends HTMLElement {
     if (!config) throw new Error("Frankys Network: Konfiguration fehlt");
 
     this.config = {
-      title: "Frankys_Stuff",
+      title: "Steve´s",
       subtitle: "NETWORK",
-      tagline: "SMART HOME · NETWORK",
-      background: "",
-      public_mode: false,
-      throughput_unit: "kB/s",
-      dsl_unit: "kbit/s",
+      tagline: "SMART HOME · STABIL · SICHER · VERBUNDEN",
+      background: "/local/JARVIS_Netzwerk_Loop_Crossfade.mp4",
+      public_mode: true,
+      throughput_unit: "auto",
+      dsl_unit: "auto",
+      volume_unit: "auto",
       uptime_mode: "start_time",
       uptime_unit: "seconds",
       entities: {},
-      wifi: [],
-      actions: [],
-      mesh: [],
+      wifi: [
+        {label:"Wi-Fi 2,4 GHz",entity:""},
+        {label:"Wi-Fi 5 GHz",entity:""},
+        {label:"Gast-WLAN",entity:""}
+      ],
+      actions: [
+        {label:"Neu verbinden",description:"Internetverbindung erneuern",icon:"mdi:sync",entity:""},
+        {label:"Neu starten",description:"Router neu starten",icon:"mdi:power",entity:"",danger:true,confirm:"Router wirklich neu starten?"}
+      ],
+      clients: [],
+      mesh: [
+        {label:"Speedport Smart 4",topology_name:"",entity:""},
+        {label:"NODE A",topology_name:"",entity:""},
+        {label:"NODE B",topology_name:"",entity:""},
+        {label:"NODE C",topology_name:"",entity:""},
+        {label:"REPEATER",topology_name:"",entity:""},
+        {label:"MESH ADAPTER",topology_name:"",entity:""},
+        {label:"NODE D",topology_name:"",entity:""}
+      ],
       ...config,
     };
 
     if (!Array.isArray(this.config.wifi)) this.config.wifi = [];
     if (!Array.isArray(this.config.actions)) this.config.actions = [];
     if (!Array.isArray(this.config.mesh)) this.config.mesh = [];
-
+    if (!Array.isArray(this.config.clients)) this.config.clients = [];
+    this._historyLoaded = false;
+    this._series = {};
     this._render();
   }
 
   set hass(hass) {
     this._hass = hass;
     this._update();
+    if (!this.config?.public_mode && !this._historyLoaded) this._loadHistory();
   }
 
   getCardSize() {
@@ -73,6 +93,37 @@ class FrankysNetworkCard extends HTMLElement {
       maximumFractionDigits: digits,
       minimumFractionDigits: 0
     }).format(n);
+  }
+
+  _rateMbit(value, id, unitOverride, defaultUnit) {
+    if (value === null || !Number.isFinite(value)) return null;
+    const unit = (unitOverride && unitOverride !== "auto" ? unitOverride :
+      this._entity(id)?.attributes?.unit_of_measurement || defaultUnit)
+      .toString().trim().toLowerCase().replace(/\s/g, "");
+    if (["mbit/s","mbps"].includes(unit)) return value;
+    if (["kbit/s","kbps"].includes(unit)) return value/1000;
+    if (["bit/s","bps"].includes(unit)) return value/1e6;
+    if (["mbyte/s","mb/s"].includes(unit)) return value*8;
+    if (["kbyte/s","kb/s"].includes(unit)) return value*8/1000;
+    if (["byte/s","b/s"].includes(unit)) return value*8/1e6;
+    return value*(defaultUnit === "kbit/s" ? .001 : .008);
+  }
+
+  _volumeGB(value, id) {
+    if (value == null) return null;
+    const unit = (this.config.volume_unit !== "auto" ? this.config.volume_unit :
+      this._entity(id)?.attributes?.unit_of_measurement || "GB").toString().toLowerCase();
+    if (unit === "tb") return value*1000;
+    if (unit === "mb") return value/1000;
+    if (unit === "byte" || unit === "b") return value/1e9;
+    if (unit === "kb") return value/1e6;
+    return value;
+  }
+
+  _volumeText(value) {
+    if (value == null) return '— <small>GB</small>';
+    return value >= 1000 ? `${this._fmt(value/1000,2)} <small>TB</small>` :
+      `${this._fmt(value,2)} <small>GB</small>`;
   }
 
   _stateLabel(id) {
@@ -128,13 +179,19 @@ class FrankysNetworkCard extends HTMLElement {
             ${this._stat("mdi:link-variant", "DSL LINK", "dsl")}
             ${this._stat("mdi:chip", "CPU", "cpu")}
             ${this._stat("mdi:clock-outline", "UPTIME", "uptime")}
-            ${this._stat("mdi:account-multiple-outline", "CLIENTS", "clients")}
+            ${this._stat("mdi:upload-network-outline", "GB GESENDET", "sent")}
+            ${this._stat("mdi:download-network-outline", "GB EMPFANGEN", "received")}
+            ${this._stat("mdi:account-multiple-outline", "VERBUNDENE CLIENTS", "clients")}
           </section>
 
-          <aside class="fsn-side">
-            ${wifi ? `<section class="fsn-panel"><h3><ha-icon icon="mdi:wifi"></ha-icon> WLAN</h3>${wifi}</section>` : ""}
-            ${c.entities?.guest_qr ? `<section class="fsn-panel fsn-qr-panel"><h3><ha-icon icon="mdi:qrcode"></ha-icon> GAST-WLAN</h3><img data-qr alt="Gast-WLAN QR-Code" hidden><small data-qr-status>Nicht verfügbar</small></section>` : ""}
-            ${actions ? `<section class="fsn-panel"><h3><ha-icon icon="mdi:cog"></ha-icon> FUNKTIONEN</h3>${actions}</section>` : ""}
+          <aside class="fsn-side fsn-left">
+            <section class="fsn-panel"><h3><ha-icon icon="mdi:wifi"></ha-icon> WLAN</h3>${wifi || '<small>Keine WLAN-Schalter</small>'}</section>
+            <section class="fsn-panel fsn-qr-panel"><h3><ha-icon icon="mdi:qrcode"></ha-icon> GAST-WLAN QR</h3><div class="fsn-qr-area"><img data-qr alt="Gast-WLAN QR-Code" hidden></div><small data-qr-status>Noch kein QR-Code</small></section>
+          </aside>
+
+          <aside class="fsn-side fsn-right">
+            <section class="fsn-panel"><h3><ha-icon icon="mdi:cog"></ha-icon> NETZWERK FUNKTIONEN</h3>${actions || '<small>Keine Aktionen</small>'}</section>
+            <section class="fsn-panel fsn-clients"><h3><ha-icon icon="mdi:account-multiple-outline"></ha-icon> AKTUELLE CLIENTS</h3><div data-client-list></div></section>
           </aside>
 
           <main class="fsn-mesh">
@@ -191,13 +248,49 @@ class FrankysNetworkCard extends HTMLElement {
         .fsn-dialog-title{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:24px}.fsn-dialog-model{margin-top:4px;color:rgba(143,213,236,.78);font-size:13px}
         .fsn-dialog-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}.fsn-dialog-item{padding:10px;border:1px solid rgba(105,164,185,.14);border-radius:8px;background:rgba(9,28,43,.40)}.fsn-dialog-item span{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;opacity:.58}.fsn-dialog-item strong{display:block;margin-top:4px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         @media (max-width:1000px){.fsn-stats{grid-template-columns:repeat(3,1fr)}.fsn-side{top:38%;width:28%}.fsn-mesh{left:32%;top:38%;grid-template-columns:repeat(2,1fr)}}
+
+        /* v1.2: complete desktop cockpit; original LCARS theme remains external. */
+        .fsn-stats{left:1.5%;right:1.5%;top:11.4%;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px}
+        .fsn-stat{height:78px;min-height:78px;padding:10px 10px 6px;overflow:hidden}
+        .fsn-stat .head{font-size:clamp(8px,.68vw,12px);white-space:nowrap;gap:5px}
+        .fsn-stat .head ha-icon{--mdc-icon-size:17px}
+        .fsn-stat .value{font-size:clamp(16px,1.5vw,27px);margin-top:9px;white-space:nowrap}
+        .fsn-sparkline{display:block;width:100%;height:24px;margin-top:-1px;color:#4cdbff;opacity:.9}
+        .fsn-sparkline polyline{stroke:currentColor;stroke-width:1.65;fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+        .fsn-stat-upload,.fsn-stat-received{color:#c98aff}.fsn-stat-upload .fsn-sparkline,.fsn-stat-received .fsn-sparkline{color:#d18afd}
+        .fsn-stat-cpu .fsn-sparkline{color:#ffbf6c}
+        .fsn-stat-uptime .fsn-sparkline{visibility:hidden}
+        .fsn-side{top:29%;width:min(272px,19%);max-height:69%;overflow:hidden;gap:12px}
+        .fsn-left{left:1.6%}.fsn-right{left:auto;right:1.6%}
+        .fsn-panel{padding:13px 14px}.fsn-panel h3{font-size:clamp(10px,.85vw,14px)}
+        .fsn-row{padding:10px 8px;min-height:43px}
+        .fsn-copy strong{font-size:clamp(10px,.85vw,14px)}
+        .fsn-qr-area{min-height:146px;display:flex;align-items:center;justify-content:center}
+        .fsn-qr-panel img{width:140px;max-width:90%}
+        .fsn-clients{max-height:360px;overflow:auto}
+        .fsn-client-row{display:flex;align-items:center;gap:8px;border:1px solid rgba(111,162,187,.18);border-radius:7px;margin:4px 0;padding:5px 7px;background:rgba(1,10,20,.62)}
+        .fsn-client-copy{display:grid;gap:2px;min-width:0}.fsn-client-copy strong{font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+        .fsn-client-copy small{font-size:10px;color:#64cce9;white-space:nowrap}
+        .fsn-mesh{left:20%;right:20%;top:29%;bottom:4%;display:block;pointer-events:none}
+        .fsn-mesh-card{position:absolute;width:135px;min-height:40px;padding:5px 7px;gap:6px;pointer-events:auto;border:0;background:rgba(1,10,23,.55);border-radius:4px;transform:translate(-50%,-50%);box-shadow:none;backdrop-filter:blur(2px)}
+        .fsn-mesh-card .fsn-copy strong{font-size:12px;color:#dcfaff}
+        .fsn-mesh-card .fsn-copy small{font-size:10px;color:#79d5ec}
+        .fsn-mesh-card:nth-child(1){left:50%;top:50%;width:170px}
+        .fsn-mesh-card:nth-child(2){left:50%;top:12%}
+        .fsn-mesh-card:nth-child(3){left:17%;top:30%}
+        .fsn-mesh-card:nth-child(4){left:83%;top:32%}
+        .fsn-mesh-card:nth-child(5){left:12%;top:66%}
+        .fsn-mesh-card:nth-child(6){left:34%;top:87%}
+        .fsn-mesh-card:nth-child(7){left:84%;top:84%}
+        .fsn-empty{padding-top:90px;text-align:center}
+        @media (max-width:1100px){.fsn-stats{grid-template-columns:repeat(4,1fr)}.fsn-side{top:36%;width:24%}.fsn-mesh{left:24%;right:24%;top:38%}.fsn-mesh-card{width:100px}.fsn-clients{max-height:220px}}
       </style>`;
 
     this._update();
   }
 
   _stat(icon, label, key) {
-    return `<div class="fsn-stat"><div class="head"><ha-icon icon="${icon}"></ha-icon><span>${label}</span></div><div class="value" data-stat="${key}">—</div></div>`;
+    return `<div class="fsn-stat fsn-stat-${key}"><div class="head"><ha-icon icon="${icon}"></ha-icon><span>${label}</span></div><div class="value" data-stat="${key}">—</div><svg class="fsn-sparkline" data-chart="${key}" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><polyline></polyline></svg></div>`;
   }
 
   _uptimeDays(state) {
@@ -244,6 +337,87 @@ class FrankysNetworkCard extends HTMLElement {
   _rateText(kbps) {
     const n = Number(kbps);
     return Number.isFinite(n) && n > 0 ? `${this._fmt(n / 1000, 0)} Mbit/s` : "—";
+  }
+
+  _updateClientList() {
+    const host=this._root.querySelector("[data-client-list]");
+    if(!host) return;
+    const items = this.config.public_mode ? [
+      {name:"NODE A",type:"WLAN",speed:"240 Mbit/s",on:true},
+      {name:"NODE B",type:"WLAN",speed:"390 Mbit/s",on:true},
+      {name:"NODE C",type:"WLAN",speed:"173 Mbit/s",on:true},
+      {name:"NODE D",type:"WLAN",speed:"195 Mbit/s",on:true},
+      {name:"REPEATER",type:"WLAN",speed:"78 Mbit/s",on:true},
+      {name:"MESH ADAPTER",type:"LAN",speed:"390 Mbit/s",on:true}
+    ] : this.config.clients.map((c) => ({
+      name:c.label||c.name||"Client", type:c.connection||"",speed:c.speed||"",
+      on:c.entity ? this._entity(c.entity)?.state==="home" || this._entity(c.entity)?.state==="on" : null
+    }));
+    if(!this.config.public_mode && !items.length) {
+      const unique=new Set();
+      for(const n of this._topologyNodes())for(const c of n.clients||[]) {
+        if(c.connection_state!=="CONNECTED")continue;
+        const name=String(c.name||c.ha_entity_id||c.ip||"Client");
+        if(unique.has(name))continue;
+        unique.add(name);
+        items.push({name,type:c.connection_type||"WLAN",speed:"",on:true});
+      }
+    }
+    const signature=JSON.stringify(items);
+    if(signature===this._previousClients)return;
+    this._previousClients=signature;
+    host.replaceChildren();
+    if(!items.length){const x=document.createElement("small");x.textContent="Noch keine Clientdaten";host.appendChild(x);return;}
+    for(const c of items.slice(0,12)){
+      const row=document.createElement("div");row.className="fsn-client-row";
+      const dot=document.createElement("span");dot.className="fsn-dot";
+      dot.style.background=c.on===true?"#55ef78":c.on===false?"#ff536d":"#ffc158";
+      const t=document.createElement("span");t.className="fsn-client-copy";
+      const name=document.createElement("strong");name.textContent=c.name;
+      const sub=document.createElement("small");sub.textContent=[c.type,c.speed].filter(Boolean).join(" · ")||"Status unbekannt";
+      t.append(name,sub);row.append(dot,t);host.appendChild(row);
+    }
+  }
+
+  _seriesKeyIds(){const e=this.config.entities||{};
+    return {download:e.download,upload:e.upload,dsl:e.dsl_down,cpu:e.cpu_temp,sent:e.sent,received:e.received,clients:e.clients};}
+  _addPoint(key,value,time=Date.now()){
+    if(value===null||!Number.isFinite(value))return;
+    const points=this._series[key]||[];
+    if(!points.length||points[points.length-1].time!==time)points.push({time,value});
+    this._series[key]=points.filter(p=>p.time>=Date.now()-3600000).slice(-150);
+  }
+  async _loadHistory(){
+    this._historyLoaded=true;
+    if(!this._hass?.callWS)return;
+    const ids=Object.values(this._seriesKeyIds()).filter(Boolean);
+    if(!ids.length)return;
+    try{
+      const now=new Date(),before=new Date(now.getTime()-3600000);
+      const all=await this._hass.callWS({type:"history/history_during_period",start_time:before.toISOString(),end_time:now.toISOString(),entity_ids:ids,include_start_time_state:true,significant_changes_only:false,minimal_response:true});
+      if(!Array.isArray(all))return;
+      const reverse=Object.fromEntries(Object.entries(this._seriesKeyIds()).filter(([,v])=>v).map(([k,v])=>[v,k]));
+      for(const row of all){if(!Array.isArray(row))continue;
+        for(const obj of row){const k=reverse[obj.entity_id];if(!k)continue;
+          const n=Number(obj.state),t=Date.parse(obj.last_changed||obj.last_updated);
+          if(Number.isFinite(n)&&Number.isFinite(t))this._addPoint(k,n,t);
+        }
+      }
+      this._updateSparklines();
+    }catch(err){console.info("Frankys Network: optionaler Verlauf nicht verfügbar",err);}
+  }
+  _updateSparklines(){
+    const keys=this._seriesKeyIds();
+    for(const [k,id] of Object.entries(keys)){
+      if(!this.config.public_mode)this._addPoint(k,this._num(id));
+      const line=this._root.querySelector(`[data-chart="${k}"] polyline`);
+      if(!line)continue;
+      let values=(this._series[k]||[]).map(p=>p.value);
+      if(this.config.public_mode)values=Array.from({length:36},(_,i)=>36+9*Math.sin(i*.74+(k.length*.8))+4*Math.sin(i*2.1+k.length));
+      if(values.length<2){line.setAttribute("points","");continue;}
+      const lo=Math.min(...values),hi=Math.max(...values),span=Math.max(.0001,hi-lo);
+      line.setAttribute("points",values.map((v,i)=>`${(i*100/(values.length-1)).toFixed(1)},${(23-(v-lo)/span*21).toFixed(1)}`).join(" "));
+    }
   }
 
   _handleClick(ev) {
@@ -368,24 +542,25 @@ class FrankysNetworkCard extends HTMLElement {
       set("dsl",'300 / 44 <small>Mbit/s</small>');
       set("cpu",'56 <small>°C</small>');
       set("uptime",'42 <small>Tage</small>');
+      set("sent",'103,1 <small>GB</small>');
+      set("received",'1,11 <small>TB</small>');
       set("clients",'18');
     } else {
       const downRaw = this._num(e.download);
       const upRaw = this._num(e.upload);
-      const factor = this.config.throughput_unit === "kB/s" ? 8/1000 : this.config.throughput_unit === "kbit/s" ? 1/1000 : 1;
-
-      set("download", `${this._fmt(downRaw == null ? null : downRaw * factor, 2)} <small>Mbit/s</small>`);
-      set("upload", `${this._fmt(upRaw == null ? null : upRaw * factor, 2)} <small>Mbit/s</small>`);
+      set("download", `${this._fmt(this._rateMbit(downRaw,e.download,this.config.throughput_unit,"kB/s"), 2)} <small>Mbit/s</small>`);
+      set("upload", `${this._fmt(this._rateMbit(upRaw,e.upload,this.config.throughput_unit,"kB/s"), 2)} <small>Mbit/s</small>`);
 
       const dslDown = this._num(e.dsl_down);
       const dslUp = this._num(e.dsl_up);
-      const dslFactor = this.config.dsl_unit === "kbit/s" ? 1/1000 : 1;
-      set("dsl", `${this._fmt(dslDown == null ? null : dslDown*dslFactor,1)} / ${this._fmt(dslUp == null ? null : dslUp*dslFactor,1)} <small>Mbit/s</small>`);
+      set("dsl", `${this._fmt(this._rateMbit(dslDown,e.dsl_down,this.config.dsl_unit,"kbit/s"),1)} / ${this._fmt(this._rateMbit(dslUp,e.dsl_up,this.config.dsl_unit,"kbit/s"),1)} <small>Mbit/s</small>`);
 
       set("cpu", `${this._fmt(this._num(e.cpu_temp),0)} <small>°C</small>`);
 
       const uptime = this._uptimeDays(this._entity(e.uptime)?.state);
       set("uptime", `${uptime == null ? "—" : uptime} <small>Tage</small>`);
+      set("sent",this._volumeText(this._volumeGB(this._num(e.sent),e.sent)));
+      set("received",this._volumeText(this._volumeGB(this._num(e.received),e.received)));
       set("clients", this._fmt(this._num(e.clients),0));
     }
 
@@ -427,6 +602,9 @@ class FrankysNetworkCard extends HTMLElement {
     status?.classList.toggle("offline", connection === "off");
     if (online) online.textContent = connection === "on" ? "Alle Systeme online" : connection === "off" ? "Verbindung prüfen" : "Systemstatus";
 
+    this._updateClientList();
+    this._updateSparklines();
+
     this.config.mesh.forEach((item, i) => {
       const card = this._root.querySelector(`[data-mesh="${i}"]`);
       const meta = this._root.querySelector(`[data-mesh-meta="${i}"]`);
@@ -440,7 +618,9 @@ class FrankysNetworkCard extends HTMLElement {
       }
 
       const node = this._meshNode(item);
-      const nodeStatus = this._meshStatus(node);
+      const tracked=this._entity(item.entity)?.state;
+      const nodeStatus = node ? this._meshStatus(node) :
+        tracked==="home"||tracked==="on" ? "online" : tracked==="not_home"||tracked==="off" ? "offline" : "unknown";
       card.classList.toggle("online", nodeStatus === "online");
       card.classList.toggle("offline", nodeStatus === "offline");
 

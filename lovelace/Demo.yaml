@@ -1,4 +1,5 @@
 type: custom:frankys-network-card
+title: "Steve´s"
+subtitle: NETWORK
+background: /local/JARVIS_Netzwerk_Loop_Crossfade.mp4
 public_mode: true
-mesh:
-  - label: Demo Mesh Node
