@@ -1,13 +1,13 @@
-# Frankys_Stuff Network v1.2.5 — Steve / Speedport Smart 4
+# Frankys_Stuff Network v1.3.0 — Steve / Speedport Smart 4
 
-**v1.2.1 – Netzwerkkarte mit automatischer Clientliste** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
+**v1.3.0 – Konfigurierbare LTE-/Hybrid-HUDs und automatische Clientliste** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
 
 ## Bereits jetzt
 
 1. In Steves HACS **Frankys_Stuff Network → Erneut herunterladen** (Branch `main`).
 2. Browser hart neu laden (`Strg+F5`).
-3. Dashboard-Karte mit `lovelace/Steve-Speedport.yaml` ersetzen. `public_mode: true` zeigt 8 Demohuds ohne Routerzugang.
-5. Die MP4 liegt bei Steve bereits unter `/config/www/JARVIS_Netzwerk_Loop_Crossfade.mp4`. Die Beispiel-YAML verweist auf `/local/JARVIS_Netzwerk_Loop_Crossfade.mp4`.
+3. **Bestehende Live-Karten-YAML beibehalten**; `lovelace/Steve-Speedport.yaml` ist nur eine isolierte Demo mit Platzhaltern (`public_mode: true`) und darf keine bestehende Live-Konfiguration ersetzen.
+4. Die MP4 liegt bei Steve bereits unter `/config/www/JARVIS_Netzwerk_Loop_Crossfade.mp4`. Die Beispiel-YAML verweist auf `/local/JARVIS_Netzwerk_Loop_Crossfade.mp4`.
 
 ## Sobald Speedport verbunden ist
 
@@ -15,6 +15,36 @@
 2. Vorhandene Entity-IDs **nur in** `entities`, `wifi[].entity`, `actions[].entity`, `mesh[].topology_name` bzw. `mesh[].entity` und `clients[]` eintragen.
 3. `public_mode: false` setzen. Nicht unterstützte Sensorfelder (z. B. CPU, kumuliertes Datenvolumen) leer lassen; HUD zeigt dann `—`.
 4. Die Speedport-Integration muss einen Topologie-Sensor mit `attributes.mesh_nodes` liefern, damit alle Linkraten/Mesh-Details automatisch befüllt werden. Sonst können einzelne Mesh-Tracker zugeordnet werden, aber fehlende Linkdaten werden nicht erfunden.
+
+## LTE-/Hybrid-HUDs (v1.3.0)
+
+Die drei bisherigen HUDs **DSL LINK**, **CPU** und **UPTIME** lassen sich bei `public_mode: false` optional überschreiben. Ohne `huds:` bleiben die bisherigen Anzeigen und ihr Verhalten unverändert. Für einen Speedport mit Mobilfunk/Hybrid:
+
+```yaml
+huds:
+  dsl:
+    type: tunnels
+    label: LTE / HYBRID
+    icon: mdi:access-point-network
+    lte: binary_sensor.DEIN_LTE_TUNNEL
+    hybrid: binary_sensor.DEIN_HYBRID_TUNNEL
+  cpu:
+    type: sensor
+    label: LTE SIGNAL
+    icon: mdi:signal-cellular-3
+    entity: sensor.DEIN_LTE_SIGNAL
+    unit: dBm
+  uptime:
+    type: sensor
+    label: 5G SIGNAL
+    icon: mdi:signal-cellular-3
+    entity: sensor.DEIN_5G_SIGNAL
+    unit: dBm
+```
+
+Den `huds:`-Block auf **oberster YAML-Ebene** in die bereits funktionierende Live-Karte einfügen; vorhandene `entities:`, `wifi:`, `mesh:`, `actions:` und `clients:` nicht ersetzen. `type: tunnels` zeigt getrennt **LTE AN/AUS** und **HYB AN/AUS** (`—` bei fehlender Entität). `type: sensor` zeigt numerische Werte mit automatischer Sensor-Einheit oder optional `unit:` und `decimals:` (0–3). Signalsensoren können Verlaufskurven nutzen, sofern Home Assistant Messhistorie liefert.
+
+**Wichtig:** dBm ist Signalstärke, keine Datenrate. Ein positiver Tunnelstatus sagt nicht aus, dass ein DSL-Link aktiv ist. Die Quellen sind nur lesend; die Karte schaltet keine Mobilfunkverbindung.
 
 ## Erweiterte Repeater-Details (v1.2.5)
 
