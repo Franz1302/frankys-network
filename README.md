@@ -1,4 +1,4 @@
-# Frankys_Stuff Network v1.2.2 — Steve / Speedport Smart 4
+# Frankys_Stuff Network v1.2.3 — Steve / Speedport Smart 4
 
 **v1.2.1 – Netzwerkkarte mit automatischer Clientliste** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
 
@@ -15,6 +15,20 @@
 2. Vorhandene Entity-IDs **nur in** `entities`, `wifi[].entity`, `actions[].entity`, `mesh[].topology_name` bzw. `mesh[].entity` und `clients[]` eintragen.
 3. `public_mode: false` setzen. Nicht unterstützte Sensorfelder (z. B. CPU, kumuliertes Datenvolumen) leer lassen; HUD zeigt dann `—`.
 4. Die Speedport-Integration muss einen Topologie-Sensor mit `attributes.mesh_nodes` liefern, damit alle Linkraten/Mesh-Details automatisch befüllt werden. Sonst können einzelne Mesh-Tracker zugeordnet werden, aber fehlende Linkdaten werden nicht erfunden.
+
+## Normale WLAN-Verstärker via Speedport (v1.2.3)
+
+Wenn die Speedport-Integration die verbundenen Geräte im Attribut `devices` des unter `entities.clients` eingetragenen Sensors liefert, lassen sich einzelne Verstärker per `client_name` einblenden, auch ohne eigenen `device_tracker`:
+
+```yaml
+mesh:
+  - label: WLAN-Verstärker 1
+    client_name: "NAME_AUS_DER_SPEEDPORT_CLIENTLISTE"
+    model: "WLAN-Verstärker"
+    connection_label: "WLAN (Geräteklasse, manuell)"
+```
+
+Die Zuordnung erfolgt nur über den exakten Namen, ohne Beachtung von Groß-/Kleinschreibung. Wenn ein Client aktuell in der Speedport-Liste vorhanden ist, erhält er einen grünen Status. Fehlt der Name, bleibt der Status unbekannt, da die Geräteliste möglicherweise unvollständig ist. Es werden keine WLAN-Linkraten, Firmware-Versionen oder Clientzahlen für die Repeater erfunden.
 
 ## Router ohne Mesh-Topologie (v1.2.2)
 
