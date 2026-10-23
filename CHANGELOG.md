@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.2
+- Zusätzlichen (achten) Access Point in der Netzwerkgrafik unterstützt, ohne bisherige Knoten zu ersetzen.
+- Optionaler Speedport-Client-Abgleich über `mesh[].client_ip`; bei fehlendem Nachweis bleibt der Status unbekannt.
+- Manuell bekannte Access-Point-Angaben (IP, SSID, Firmware, Betriebsart) im Popup klar als nicht-live gekennzeichnet.
+- Keine Zugangsdaten nötig; vorhandene Router-/Repeater-Popups und HUDs unverändert.
+
 ## v1.3.1
 - Zusätzliche Speedport-Clients können als freie Netzwerkknoten (`mesh[].kind: device`, `mesh[].client_name`) mit ihren verfügbaren IP-/MAC-Details erscheinen.
 - Bei allgemeinen Geräten wird keine irreführende Repeater-Clientzuordnung behauptet; die bisherigen Repeater-Popups bleiben unverändert.
