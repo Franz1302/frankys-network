@@ -1,5 +1,5 @@
 /*
- * Frankys_Stuff Network v1.3.1
+ * Frankys_Stuff Network v1.3.2
  * Copyright © 2026 Franz Schwenninger
  * Licensed under the PolyForm Noncommercial License 1.0.0.
  * Required Notice: Copyright © 2026 Franz Schwenninger
@@ -300,6 +300,7 @@ class FrankysNetworkCard extends HTMLElement {
         .fsn-mesh-card:nth-child(5){left:12%;top:66%}
         .fsn-mesh-card:nth-child(6){left:34%;top:87%}
         .fsn-mesh-card:nth-child(7){left:84%;top:84%}
+        .fsn-mesh-card:nth-child(8){left:91%;top:59%}
         .fsn-empty{padding-top:90px;text-align:center}
         @media (max-width:1100px){.fsn-stats{grid-template-columns:repeat(4,1fr)}.fsn-side{top:36%;width:24%}.fsn-mesh{left:24%;right:24%;top:38%}.fsn-mesh-card{width:100px}.fsn-clients{max-height:220px}}
       </style>`;
@@ -369,13 +370,26 @@ class FrankysNetworkCard extends HTMLElement {
     return devices.find(d => String(d?.name || "").trim().toLocaleLowerCase() === target) || null;
   }
 
+  _speedportClientForItem(item) {
+    if (!item) return null;
+    const byName = item.client_name ? this._speedportClientByName(item.client_name) : null;
+    if (byName) return byName;
+    const address = String(item.client_ip || "").trim();
+    if (!address) return null;
+    const source = this._entity(this.config?.entities?.clients);
+    if (!source || ["unknown","unavailable"].includes(source.state)) return null;
+    const devices = source.attributes?.devices;
+    if (!Array.isArray(devices)) return null;
+    return devices.find(d => String(d?.ip || "").trim() === address) || null;
+  }
+
   _clientPresence(name) {
     return this._speedportClientByName(name) ? "online" : "unknown";
   }
 
   _nodeConnectionStatus(item, node) {
     if (node) return this._meshStatus(node);
-    if (item.client_name) return this._clientPresence(item.client_name);
+    if (item.client_name || item.client_ip) return this._speedportClientForItem(item) ? "online" : "unknown";
     return this._mappedStatus(item.entity);
   }
 
@@ -567,7 +581,7 @@ class FrankysNetworkCard extends HTMLElement {
     const kicker = this._root.querySelector(".fsn-dialog-kicker");
     if(title) title.textContent = item.label || `Node ${index+1}`;
     if(model) model.textContent = router ? item.model || "Router"
-      : node?.model || item.model || (item.client_name ? (item.kind === "device" ? "Netzwerkgerät" : "WLAN-Verstärker") : item.entity ? "Netzwerkgerät" : "Keine Datenquelle zugeordnet");
+      : node?.model || item.model || (item.client_name || item.client_ip ? (item.kind === "access_point" ? "Access Point" : item.kind === "device" ? "Netzwerkgerät" : "WLAN-Verstärker") : item.entity ? "Netzwerkgerät" : "Keine Datenquelle zugeordnet");
     if(kicker) kicker.textContent = router ? "ROUTER DETAILS" : item.kind === "device" ? "NETZWERKGERÄT" : "NETWORK NODE";
     if(dot) dot.style.background = status==="online" ? "#55ef78" : status==="offline" ? "#ff536d" : "#ffc158";
 
@@ -580,9 +594,9 @@ class FrankysNetworkCard extends HTMLElement {
     };
     const totalClients = this._num(item.clients_entity || this.config.entities?.clients);
     const connectedClients = Array.isArray(node?.clients) ? node.clients.filter(x=>x?.connection_state==="CONNECTED").length : null;
-    const trackedClient = !router && !this.config.public_mode && !!item.client_name && !node;
-    const isRepeater = trackedClient && item.kind !== "device";
-    const clientData = trackedClient ? this._speedportClientByName(item.client_name) : null;
+    const trackedClient = !router && !this.config.public_mode && !!(item.client_name || item.client_ip) && !node;
+    const isRepeater = trackedClient && item.kind !== "device" && item.kind !== "access_point";
+    const clientData = trackedClient ? this._speedportClientForItem(item) : null;
     const rows = router ? [
       ["Routerstatus",routerStatus && !["unknown","unavailable"].includes(routerStatus) ? routerStatus : onlineLabel],
       ["Anschluss",item.connection_label || "—"],
@@ -592,11 +606,11 @@ class FrankysNetworkCard extends HTMLElement {
       ["Firmware",item.firmware || "—"]
     ] : trackedClient ? [
       ["Status",onlineLabel],
-      ["Gerätetyp",item.connection_label || (isRepeater ? "WLAN-Verstärker" : "Netzwerkgerät")],
-      ["IPv4-Adresse",clientData?.ip || "—"],
+      ["Gerätetyp",item.connection_label || (isRepeater ? "WLAN-Verstärker" : item.kind === "access_point" ? "Access Point" : "Netzwerkgerät")],
+      ["IPv4-Adresse",clientData?.ip || item.client_ip || "—"],
       ["MAC-Adresse",clientData?.mac || "—"],
-      ["Erkennung",clientData ? "Speedport-Geräteliste" : "Nicht in aktueller Liste"],
-      [isRepeater ? "Firmware" : "Gerätename",isRepeater ? (item.firmware || "—") : (clientData?.name || item.client_name || "—")]
+      ["Erkennung",clientData ? "Speedport-Geräteliste" : item.client_ip ? "Nur IP konfiguriert" : "Nicht in aktueller Liste"],
+      [isRepeater ? "Firmware" : "Gerätename",isRepeater ? (item.firmware || "—") : (clientData?.name || item.client_name || item.label || "—")]
     ] : [
       ["Status",onlineLabel],
       ["Verbindung",node?.parent_link_type || item.connection_label || "—"],
@@ -605,6 +619,12 @@ class FrankysNetworkCard extends HTMLElement {
       ["Clients",connectedClients==null ? "—" : String(connectedClients)],
       ["Firmware",node?.firmware || item.firmware || "—"]
     ];
+
+    if (trackedClient && item.kind === "access_point") {
+      if (item.firmware) rows.push(["Firmware (manuell)",item.firmware]);
+      if (item.ssid) rows.push(["WLAN-SSID (manuell)",item.ssid]);
+      if (item.mode) rows.push(["Betriebsart (manuell)",item.mode]);
+    }
 
     if (grid) {
       grid.replaceChildren();
@@ -638,7 +658,7 @@ class FrankysNetworkCard extends HTMLElement {
           .map(d => String(d?.name || d?.ha_entity_id || "").trim()).filter(Boolean);
         if (heading) heading.textContent = `CLIENTS AN DIESEM KNOTEN (${new Set(names).size})`;
         section.hidden = false;
-      } else if (!this.config.public_mode && item.client_name && item.kind !== "device") {
+      } else if (!this.config.public_mode && item.client_name && item.kind !== "device" && item.kind !== "access_point") {
         if (heading) heading.textContent = "CLIENTS AN DIESEM VERSTÄRKER";
         const notice = document.createElement("div");
         notice.textContent = "Speedport liefert keine Zuordnung der Clients zu diesem Verstärker.";
@@ -785,7 +805,7 @@ class FrankysNetworkCard extends HTMLElement {
       const rate = positive.length ? Math.min(...positive) / 1000 : 0;
       const type = node?.parent_link_type || "—";
       if(meta) meta.textContent = node ? `${type} · ${rate>0 ? this._fmt(rate,0)+" Mbit/s" : nodeStatus==="online" ? "verbunden" : "offline"}`
-        : item.client_name ? (nodeStatus==="online" ? "In Speedport-Clientliste" : "Nicht in aktueller Clientliste")
+        : item.client_name || item.client_ip ? (nodeStatus==="online" ? "In Speedport-Clientliste" : item.client_ip ? "IP manuell · nicht bestätigt" : "Nicht in aktueller Clientliste")
         : !item.entity ? "Keine Datenquelle" : item.kind==="router"
           ? (nodeStatus==="online" ? "Router · OK" : nodeStatus==="offline" ? "Routerstatus prüfen" : "Routerstatus unbekannt")
           : nodeStatus==="online" ? "Verbunden" : nodeStatus==="offline" ? "Offline" : "Status unbekannt";
