@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.0
+- Optional konfigurierbare drei HUDs: DSL-Link → LTE-/Hybrid-Tunnelstatus, CPU → LTE-dBm, Laufzeit → 5G-dBm.
+- Anpassbare Labels und Symbole; Signalsensoren auch als Quelle für Verlaufskurven.
+- Nicht konfigurierte HUDs, Demo-Modus und bestehende Karten bleiben kompatibel; keine Routerfunktionen werden ausgelöst.
+- Erweiterung rein clientseitig, ohne private Entity-IDs im veröffentlichten Repository.
+
 ## v1.2.5
 - Repeater-Dialog zeigt IPv4-Adresse und MAC-Adresse aus dem vorhandenen Speedport-`devices`-Attribut; keine neuen Integrationen oder Zugangsdaten nötig.
 - Gerätetyp und Statusquelle gekennzeichnet; bei fehlenden Geräten bleiben IP/MAC unbekannt, keine erfundene Firmware.
