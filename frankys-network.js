@@ -1,5 +1,5 @@
 /*
- * Frankys_Stuff Network v1.2
+ * Frankys_Stuff Network v1.2.1
  * Copyright © 2026 Franz Schwenninger
  * Licensed under the PolyForm Noncommercial License 1.0.0.
  * Required Notice: Copyright © 2026 Franz Schwenninger
@@ -353,6 +353,20 @@ class FrankysNetworkCard extends HTMLElement {
       name:c.label||c.name||"Client", type:c.connection||"",speed:c.speed||"",
       on:c.entity ? this._entity(c.entity)?.state==="home" || this._entity(c.entity)?.state==="on" : null
     }));
+    if (!this.config.public_mode && !items.length) {
+      const list = this._entity(this.config.entities?.clients)?.attributes?.devices;
+      if (Array.isArray(list)) {
+        const seen = new Set();
+        for (const d of list) {
+          if (!d || typeof d !== "object") continue;
+          const name = String(d.name || "").trim();
+          if (!name || seen.has(name)) continue;
+          seen.add(name);
+          items.push({name, type:"Verbunden", speed:"", on:true});
+        }
+        items.sort((a,b) => a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
+      }
+    }
     if(!this.config.public_mode && !items.length) {
       const unique=new Set();
       for(const n of this._topologyNodes())for(const c of n.clients||[]) {
@@ -368,7 +382,7 @@ class FrankysNetworkCard extends HTMLElement {
     this._previousClients=signature;
     host.replaceChildren();
     if(!items.length){const x=document.createElement("small");x.textContent="Noch keine Clientdaten";host.appendChild(x);return;}
-    for(const c of items.slice(0,12)){
+    for(const c of items.slice(0,100)){
       const row=document.createElement("div");row.className="fsn-client-row";
       const dot=document.createElement("span");dot.className="fsn-dot";
       dot.style.background=c.on===true?"#55ef78":c.on===false?"#ff536d":"#ffc158";
