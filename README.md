@@ -1,6 +1,6 @@
-# Frankys_Stuff Network v1.2 — Steve / Speedport Smart 4
+# Frankys_Stuff Network v1.2.1 — Steve / Speedport Smart 4
 
-**v1.2 – Prüffassung für den ersten HA-Test** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
+**v1.2.1 – Netzwerkkarte mit automatischer Clientliste** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
 
 ## Bereits jetzt
 
@@ -15,6 +15,10 @@
 2. Vorhandene Entity-IDs **nur in** `entities`, `wifi[].entity`, `actions[].entity`, `mesh[].topology_name` bzw. `mesh[].entity` und `clients[]` eintragen.
 3. `public_mode: false` setzen. Nicht unterstützte Sensorfelder (z. B. CPU, kumuliertes Datenvolumen) leer lassen; HUD zeigt dann `—`.
 4. Die Speedport-Integration muss einen Topologie-Sensor mit `attributes.mesh_nodes` liefern, damit alle Linkraten/Mesh-Details automatisch befüllt werden. Sonst können einzelne Mesh-Tracker zugeordnet werden, aber fehlende Linkdaten werden nicht erfunden.
+
+## Automatische Clientliste
+
+Bei `clients: []` und einem über `entities.clients` konfigurierten Zählsensor mit Attribut `devices` listet die Karte automatisch bis zu 100 verbundene Geräte nach Namen auf. Die Liste ist scrollbar und sortiert; Typcodes werden nicht als LAN oder WLAN geraten. Die Gesamtzahl im HUD kann von der Anzahl der im Attribut enthaltenen Geräte abweichen. Für Steves Installation ist keine Änderung an der bestehenden Karten-YAML nötig.
 
 ## Einheiten
 
