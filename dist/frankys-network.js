@@ -1,5 +1,5 @@
 /*
- * Frankys_Stuff Network v1.2.1
+ * Frankys_Stuff Network v1.2.2
  * Copyright © 2026 Franz Schwenninger
  * Licensed under the PolyForm Noncommercial License 1.0.0.
  * Required Notice: Copyright © 2026 Franz Schwenninger
@@ -334,6 +334,13 @@ class FrankysNetworkCard extends HTMLElement {
     return "unknown";
   }
 
+  _mappedStatus(entityId) {
+    const v = String(this._entity(entityId)?.state ?? "").trim().toLowerCase();
+    if (["ok","online","connected","on","home","up"].includes(v)) return "online";
+    if (["off","offline","disconnected","not_home","failed","error"].includes(v)) return "offline";
+    return "unknown";
+  }
+
   _rateText(kbps) {
     const n = Number(kbps);
     return Number.isFinite(n) && n > 0 ? `${this._fmt(n / 1000, 0)} Mbit/s` : "—";
@@ -487,30 +494,42 @@ class FrankysNetworkCard extends HTMLElement {
       clients: [{connection_state:"CONNECTED"}, {connection_state:"CONNECTED"}]
     } : this._meshNode(item);
 
-    const status = this.config.public_mode ? "online" : this._meshStatus(node);
+    const router = !this.config.public_mode && item.kind === "router";
+    const status = this.config.public_mode ? "online" : node ? this._meshStatus(node) : this._mappedStatus(item.entity);
     const title = this._root.querySelector("[data-dialog-title]");
     const model = this._root.querySelector("[data-dialog-model]");
     const grid = this._root.querySelector("[data-dialog-grid]");
     const dot = this._root.querySelector("[data-dialog-dot]");
+    const kicker = this._root.querySelector(".fsn-dialog-kicker");
+    if(title) title.textContent = item.label || `Node ${index+1}`;
+    if(model) model.textContent = router ? item.model || "Router"
+      : node?.model || item.model || (item.entity ? "Netzwerkgerät" : "Keine Datenquelle zugeordnet");
+    if(kicker) kicker.textContent = router ? "ROUTER DETAILS" : "NETWORK NODE";
+    if(dot) dot.style.background = status==="online" ? "#55ef78" : status==="offline" ? "#ff536d" : "#ffc158";
 
-    if (title) title.textContent = item.label || `Node ${index + 1}`;
-    if (model) model.textContent = node?.model || (node ? "Mesh-Gerät" : "Nicht gefunden");
-
-    if (dot) {
-      dot.style.background = status === "online" ? "#55ef78" : status === "offline" ? "#ff536d" : "#ffc158";
-    }
-
-    const connectedClients = Array.isArray(node?.clients)
-      ? node.clients.filter((c) => c?.connection_state === "CONNECTED").length
-      : null;
-
-    const rows = [
-      ["Status", status === "online" ? "Online" : status === "offline" ? "Offline" : "Unbekannt"],
-      ["Verbindung", node?.parent_link_type || "—"],
-      ["Link RX", this._rateText(node?.parent_cur_rx_kbps)],
-      ["Link TX", this._rateText(node?.parent_cur_tx_kbps)],
-      ["Clients", connectedClients == null ? "—" : String(connectedClients)],
-      ["Firmware", node?.firmware || "—"]
+    const onlineLabel = status==="online" ? "Online" : status==="offline" ? "Offline" : "Unbekannt";
+    const routerStatus = this._entity(item.entity)?.state;
+    const rate = (k) => {
+      const id=this.config.entities?.[k];
+      const mbps=this._rateMbit(this._num(id),id,this.config.throughput_unit,"kB/s");
+      return mbps == null ? "—" : `${this._fmt(mbps,2)} Mbit/s`;
+    };
+    const totalClients = this._num(item.clients_entity || this.config.entities?.clients);
+    const connectedClients = Array.isArray(node?.clients) ? node.clients.filter(x=>x?.connection_state==="CONNECTED").length : null;
+    const rows = router ? [
+      ["Routerstatus",routerStatus && !["unknown","unavailable"].includes(routerStatus) ? routerStatus : onlineLabel],
+      ["Anschluss",item.connection_label || "—"],
+      ["Download",rate("download")],
+      ["Upload",rate("upload")],
+      ["Clients",totalClients==null ? "—" : this._fmt(totalClients,0)],
+      ["Firmware",item.firmware || "—"]
+    ] : [
+      ["Status",onlineLabel],
+      ["Verbindung",node?.parent_link_type || item.connection_label || "—"],
+      ["Link RX",this._rateText(node?.parent_cur_rx_kbps)],
+      ["Link TX",this._rateText(node?.parent_cur_tx_kbps)],
+      ["Clients",connectedClients==null ? "—" : String(connectedClients)],
+      ["Firmware",node?.firmware || item.firmware || "—"]
     ];
 
     if (grid) {
@@ -633,8 +652,7 @@ class FrankysNetworkCard extends HTMLElement {
 
       const node = this._meshNode(item);
       const tracked=this._entity(item.entity)?.state;
-      const nodeStatus = node ? this._meshStatus(node) :
-        tracked==="home"||tracked==="on" ? "online" : tracked==="not_home"||tracked==="off" ? "offline" : "unknown";
+      const nodeStatus = node ? this._meshStatus(node) : this._mappedStatus(item.entity);
       card.classList.toggle("online", nodeStatus === "online");
       card.classList.toggle("offline", nodeStatus === "offline");
 
@@ -643,7 +661,10 @@ class FrankysNetworkCard extends HTMLElement {
       const positive = [rx, tx].filter((n) => n > 0);
       const rate = positive.length ? Math.min(...positive) / 1000 : 0;
       const type = node?.parent_link_type || "—";
-      if (meta) meta.textContent = node ? `${type} · ${rate > 0 ? this._fmt(rate,0)+" Mbit/s" : nodeStatus === "online" ? "verbunden" : "offline"}` : "Nicht gefunden";
+      if(meta) meta.textContent = node ? `${type} · ${rate>0 ? this._fmt(rate,0)+" Mbit/s" : nodeStatus==="online" ? "verbunden" : "offline"}`
+        : !item.entity ? "Keine Datenquelle" : item.kind==="router"
+          ? (nodeStatus==="online" ? "Router · OK" : nodeStatus==="offline" ? "Routerstatus prüfen" : "Routerstatus unbekannt")
+          : nodeStatus==="online" ? "Verbunden" : nodeStatus==="offline" ? "Offline" : "Status unbekannt";
     });
   }
 }
