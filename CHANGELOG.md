@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.4
+- Transparente Klickfläche über den grafischen Netzwerkgeräten erweitert, sodass auch das Gerätebild das Popup öffnet.
+- Router-Popup zeigt die namentlich vorhandenen Clients des `entities.clients`-Sensors scrollbar und dedupliziert; die Gesamtzahl bleibt separat ausgewiesen.
+- Echte Mesh-Knotendaten können weiterhin zugehörige Clients im Popup anzeigen.
+- TP-Link-/gewöhnliche Verstärker zeigen ohne übermittelte Zuordnung ausdrücklich, dass Speedport keine Clients pro Verstärker bereitstellt; es werden keine Verbindungen erfunden.
+- CSS und Funktionsprüfung mit Beispielgeräten durchgeführt; echter Browser-Test folgt.
+
 ## v1.2.3
 - Gewöhnliche WLAN-Verstärker können über `mesh[].client_name` anhand ihres Namens in `entities.clients.attributes.devices` zugeordnet werden.
 - Status wird bei vorhandener Quelle als "In Speedport-Clientliste" dargestellt; fehlender Name oder ausgefallene Datenquelle bedeutet "unbekannt", nicht automatisch offline.
