@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.1
+- Zusätzliche Speedport-Clients können als freie Netzwerkknoten (`mesh[].kind: device`, `mesh[].client_name`) mit ihren verfügbaren IP-/MAC-Details erscheinen.
+- Bei allgemeinen Geräten wird keine irreführende Repeater-Clientzuordnung behauptet; die bisherigen Repeater-Popups bleiben unverändert.
+- Optionaler `status_mode: router` unterstützt Routerstatus `OK` und zeigt "Router OK" statt eines ungesicherten Gesamtstatus.
+- Ohne diese Optionen bleiben vorhandene Konfigurationen kompatibel; keine privaten Gerätedaten veröffentlicht.
+
 ## v1.3.0
 - Optional konfigurierbare drei HUDs: DSL-Link → LTE-/Hybrid-Tunnelstatus, CPU → LTE-dBm, Laufzeit → 5G-dBm.
 - Anpassbare Labels und Symbole; Signalsensoren auch als Quelle für Verlaufskurven.
