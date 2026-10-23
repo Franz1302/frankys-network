@@ -1,4 +1,4 @@
-# Frankys_Stuff Network v1.2.4 — Steve / Speedport Smart 4
+# Frankys_Stuff Network v1.2.5 — Steve / Speedport Smart 4
 
 **v1.2.1 – Netzwerkkarte mit automatischer Clientliste** mit 8 oberen HUDs, Sparkline-Verläufen, WLAN, Gast-WLAN-QR, Routeraktionen, Clientliste, 7 Mesh-Geräten, Detaildialogen und Video-Hintergrund.
 
@@ -15,6 +15,10 @@
 2. Vorhandene Entity-IDs **nur in** `entities`, `wifi[].entity`, `actions[].entity`, `mesh[].topology_name` bzw. `mesh[].entity` und `clients[]` eintragen.
 3. `public_mode: false` setzen. Nicht unterstützte Sensorfelder (z. B. CPU, kumuliertes Datenvolumen) leer lassen; HUD zeigt dann `—`.
 4. Die Speedport-Integration muss einen Topologie-Sensor mit `attributes.mesh_nodes` liefern, damit alle Linkraten/Mesh-Details automatisch befüllt werden. Sonst können einzelne Mesh-Tracker zugeordnet werden, aber fehlende Linkdaten werden nicht erfunden.
+
+## Erweiterte Repeater-Details (v1.2.5)
+
+Bei `mesh[].client_name` zeigt das Popup neben Status und manuell bezeichnetem Gerätetyp die **IPv4-Adresse**, **MAC-Adresse** und **Erkennungsquelle** automatisch aus `entities.clients.attributes.devices`. Nur lokal aus Home Assistant gelesene Werte erscheinen; es werden keine privaten Adressen im GitHub-Code gespeichert. Falls die Gerätedaten fehlen, stehen die entsprechenden Felder auf `—`. Firmware und Clientzuordnung pro Verstärker sind damit nicht verfügbar.
 
 ## Klickflächen und Client-Popups (v1.2.4)
 
