@@ -34,9 +34,7 @@ oder ein Hintergrundvideo.
 
 ## Installation über HACS Custom Repository
 
-Voraussetzung: HACS ist bereits eingerichtet. Vorgesehener Repository-Name: `frankys-network`.
-Die Adresse `https://github.com/Franz1302/frankys-network` ist ein **vorgesehenes Ziel, noch nicht veröffentlicht**.
-Die folgenden HACS-Schritte funktionieren erst nach Veröffentlichung dieses Ordnerinhalts im öffentlichen Repository.
+Voraussetzung: HACS ist bereits eingerichtet. Repository: https://github.com/Franz1302/frankys-network.
 
 1. Home Assistant → HACS → oben rechts **⋮ → Benutzerdefinierte Repositories / Custom repositories**.
 2. `https://github.com/Franz1302/frankys-network` eintragen.

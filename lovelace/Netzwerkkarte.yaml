@@ -1,0 +1,67 @@
+type: custom:frankys-network-card
+
+title: Frankys_Stuff
+subtitle: NETWORK
+tagline: SMART HOME · STABIL · SICHER · VERBUNDEN
+
+# Optional:
+# background: /local/mein-netzwerk-loop.mp4
+public_mode: false
+
+# Einheiten der eigenen Sensoren
+throughput_unit: kB/s
+dsl_unit: kbit/s
+
+# Uptime:
+# start_time = Sensorzustand ist ein Datum/Zeitstempel des letzten Starts
+# duration   = Sensorzustand ist eine Laufzeit als Zahl
+uptime_mode: start_time
+# Nur bei uptime_mode: duration relevant:
+uptime_unit: seconds   # seconds | minutes | hours | days
+
+# ==========================================================
+# USER CONFIG
+# Nur hier die eigenen Entity-IDs einsetzen.
+# Nicht benötigte Einträge können entfernt werden.
+# ==========================================================
+entities:
+  download: sensor.DEIN_DOWNLOAD
+  upload: sensor.DEIN_UPLOAD
+  dsl_down: sensor.DEIN_DSL_DOWNLOAD
+  dsl_up: sensor.DEIN_DSL_UPLOAD
+  cpu_temp: sensor.DEINE_CPU_TEMPERATUR
+  uptime: sensor.DEINE_UPTIME
+  clients: sensor.DEINE_CLIENT_ANZAHL
+  connection: binary_sensor.DEINE_INTERNET_VERBINDUNG
+  guest_qr: image.DEIN_GAST_WLAN_QR
+  topology: sensor.DEINE_MESH_TOPOLOGIE
+
+wifi:
+  - label: Wi-Fi 2,4 GHz
+    entity: switch.DEIN_WLAN_24
+  - label: Wi-Fi 5 GHz
+    entity: switch.DEIN_WLAN_5
+  - label: Gast-WLAN
+    entity: switch.DEIN_GAST_WLAN
+
+actions:
+  - label: Neu verbinden
+    description: Internetverbindung erneuern
+    icon: mdi:sync
+    entity: button.DEIN_NEU_VERBINDEN
+  - label: Router neu starten
+    description: Router neu starten
+    icon: mdi:power
+    entity: button.DEIN_ROUTER_NEUSTART
+    danger: true
+    confirm: Router wirklich neu starten?
+
+# Optional. Nur nötig, wenn dein Topologie-Sensor das Attribut mesh_nodes liefert.
+# Die Karten sind anklickbar und öffnen Knotendetails.
+mesh:
+  - label: Mesh Node 1
+    topology_name: DEIN_TOPOLOGIE_NAME_1
+  - label: Mesh Node 2
+    topology_name: DEIN_TOPOLOGIE_NAME_2
+  - label: Repeater
+    topology_name: DEIN_TOPOLOGIE_NAME_3

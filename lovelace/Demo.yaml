@@ -1,0 +1,4 @@
+type: custom:frankys-network-card
+public_mode: true
+mesh:
+  - label: Demo Mesh Node
