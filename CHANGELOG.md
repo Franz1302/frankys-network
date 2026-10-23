@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.5
+- Repeater-Dialog zeigt IPv4-Adresse und MAC-Adresse aus dem vorhandenen Speedport-`devices`-Attribut; keine neuen Integrationen oder Zugangsdaten nötig.
+- Gerätetyp und Statusquelle gekennzeichnet; bei fehlenden Geräten bleiben IP/MAC unbekannt, keine erfundene Firmware.
+- Clientzuordnung pro Verstärker weiterhin nicht verfügbar; Routerdetails und übrige Karte unverändert.
+
 ## v1.2.4
 - Transparente Klickfläche über den grafischen Netzwerkgeräten erweitert, sodass auch das Gerätebild das Popup öffnet.
 - Router-Popup zeigt die namentlich vorhandenen Clients des `entities.clients`-Sensors scrollbar und dedupliziert; die Gesamtzahl bleibt separat ausgewiesen.
