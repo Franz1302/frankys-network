@@ -1,5 +1,5 @@
 /*
- * Frankys_Stuff Network v1.2.5
+ * Frankys_Stuff Network v1.3.0
  * Copyright © 2026 Franz Schwenninger
  * Licensed under the PolyForm Noncommercial License 1.0.0.
  * Required Notice: Copyright © 2026 Franz Schwenninger
@@ -29,6 +29,7 @@ class FrankysNetworkCard extends HTMLElement {
       uptime_mode: "start_time",
       uptime_unit: "seconds",
       entities: {},
+      huds: {},
       wifi: [
         {label:"Wi-Fi 2,4 GHz",entity:""},
         {label:"Wi-Fi 5 GHz",entity:""},
@@ -55,6 +56,7 @@ class FrankysNetworkCard extends HTMLElement {
     if (!Array.isArray(this.config.actions)) this.config.actions = [];
     if (!Array.isArray(this.config.mesh)) this.config.mesh = [];
     if (!Array.isArray(this.config.clients)) this.config.clients = [];
+    if (!this.config.huds || typeof this.config.huds !== "object" || Array.isArray(this.config.huds)) this.config.huds = {};
     this._historyLoaded = false;
     this._series = {};
     this._render();
@@ -176,9 +178,9 @@ class FrankysNetworkCard extends HTMLElement {
           <section class="fsn-stats">
             ${this._stat("mdi:download", "DOWNLOAD", "download")}
             ${this._stat("mdi:upload", "UPLOAD", "upload")}
-            ${this._stat("mdi:link-variant", "DSL LINK", "dsl")}
-            ${this._stat("mdi:chip", "CPU", "cpu")}
-            ${this._stat("mdi:clock-outline", "UPTIME", "uptime")}
+            ${this._stat(c.public_mode ? "mdi:link-variant" : c.huds?.dsl?.icon || "mdi:link-variant",c.public_mode ? "DSL LINK" : c.huds?.dsl?.label || "DSL LINK","dsl")}
+            ${this._stat(c.public_mode ? "mdi:chip" : c.huds?.cpu?.icon || "mdi:chip",c.public_mode ? "CPU" : c.huds?.cpu?.label || "CPU","cpu")}
+            ${this._stat(c.public_mode ? "mdi:clock-outline" : c.huds?.uptime?.icon || "mdi:clock-outline",c.public_mode ? "UPTIME" : c.huds?.uptime?.label || "UPTIME","uptime")}
             ${this._stat("mdi:upload-network-outline", "GB GESENDET", "sent")}
             ${this._stat("mdi:download-network-outline", "GB EMPFANGEN", "received")}
             ${this._stat("mdi:account-multiple-outline", "VERBUNDENE CLIENTS", "clients")}
@@ -268,7 +270,11 @@ class FrankysNetworkCard extends HTMLElement {
         .fsn-sparkline polyline{stroke:currentColor;stroke-width:1.65;fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
         .fsn-stat-upload,.fsn-stat-received{color:#c98aff}.fsn-stat-upload .fsn-sparkline,.fsn-stat-received .fsn-sparkline{color:#d18afd}
         .fsn-stat-cpu .fsn-sparkline{color:#ffbf6c}
-        .fsn-stat-uptime .fsn-sparkline{visibility:hidden}
+        .fsn-stat-uptime .fsn-sparkline{visibility:${!c.public_mode && c.huds?.uptime?.type === "sensor" ? "visible" : "hidden"}}
+        .fsn-tunnel-readout{font-size:clamp(12px,1.06vw,19px);font-weight:650}
+        .fsn-tunnel-readout .fsn-hud-on{color:#55ef78}
+        .fsn-tunnel-readout .fsn-hud-off{color:#ff536d}
+        .fsn-tunnel-readout .fsn-hud-unknown{color:#ffc158}
         .fsn-side{top:29%;width:min(272px,19%);max-height:69%;overflow:hidden;gap:12px}
         .fsn-left{left:1.6%}.fsn-right{left:auto;right:1.6%}
         .fsn-panel{padding:13px 14px}.fsn-panel h3{font-size:clamp(10px,.85vw,14px)}
@@ -301,7 +307,7 @@ class FrankysNetworkCard extends HTMLElement {
   }
 
   _stat(icon, label, key) {
-    return `<div class="fsn-stat fsn-stat-${key}"><div class="head"><ha-icon icon="${icon}"></ha-icon><span>${label}</span></div><div class="value" data-stat="${key}">—</div><svg class="fsn-sparkline" data-chart="${key}" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><polyline></polyline></svg></div>`;
+    return `<div class="fsn-stat fsn-stat-${key}"><div class="head"><ha-icon icon="${this._esc(icon)}"></ha-icon><span>${this._esc(label)}</span></div><div class="value" data-stat="${key}">—</div><svg class="fsn-sparkline" data-chart="${key}" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><polyline></polyline></svg></div>`;
   }
 
   _uptimeDays(state) {
@@ -431,8 +437,34 @@ class FrankysNetworkCard extends HTMLElement {
     }
   }
 
-  _seriesKeyIds(){const e=this.config.entities||{};
-    return {download:e.download,upload:e.upload,dsl:e.dsl_down,cpu:e.cpu_temp,sent:e.sent,received:e.received,clients:e.clients};}
+  _hudOverrideHtml(key) {
+    if (this.config.public_mode) return null;
+    const hud = this.config.huds?.[key];
+    if (!hud || typeof hud !== "object") return null;
+    if (hud.type === "sensor") {
+      const value = this._num(hud.entity);
+      const rawUnit = hud.unit ?? this._entity(hud.entity)?.attributes?.unit_of_measurement ?? "";
+      const precision = Number.isInteger(hud.decimals) ? Math.max(0, Math.min(3, hud.decimals)) : 0;
+      return `${this._fmt(value,precision)} <small>${this._esc(rawUnit)}</small>`;
+    }
+    if (key === "dsl" && hud.type === "tunnels") {
+      const part = (text,id) => {
+        const state = this._entity(id)?.state;
+        const flag = state === "on" ? "on" : state === "off" ? "off" : "unknown";
+        const value = flag === "on" ? "AN" : flag === "off" ? "AUS" : "—";
+        return `<span class="fsn-hud-${flag}">${text} ${value}</span>`;
+      };
+      return `<span class="fsn-tunnel-readout">${part("LTE",hud.lte)} · ${part("HYB",hud.hybrid)}</span>`;
+    }
+    return null;
+  }
+
+  _seriesKeyIds(){const e=this.config.entities||{},h=this.config.huds||{};
+    return {download:e.download,upload:e.upload,
+      dsl:h.dsl?.type==="tunnels" ? null : h.dsl?.type==="sensor" ? h.dsl.entity : e.dsl_down,
+      cpu:h.cpu?.type==="sensor" ? h.cpu.entity : e.cpu_temp,
+      uptime:h.uptime?.type==="sensor" ? h.uptime.entity : null,
+      sent:e.sent,received:e.received,clients:e.clients};}
   _addPoint(key,value,time=Date.now()){
     if(value===null||!Number.isFinite(value))return;
     const points=this._series[key]||[];
@@ -675,6 +707,10 @@ class FrankysNetworkCard extends HTMLElement {
       set("sent",this._volumeText(this._volumeGB(this._num(e.sent),e.sent)));
       set("received",this._volumeText(this._volumeGB(this._num(e.received),e.received)));
       set("clients", this._fmt(this._num(e.clients),0));
+      for (const key of ["dsl","cpu","uptime"]) {
+        const override = this._hudOverrideHtml(key);
+        if (override !== null) set(key,override);
+      }
     }
 
     this.config.wifi.forEach((item, i) => {
