@@ -1,5 +1,5 @@
 /*
- * Frankys_Stuff Network v1.2.3
+ * Frankys_Stuff Network v1.2.4
  * Copyright © 2026 Franz Schwenninger
  * Licensed under the PolyForm Noncommercial License 1.0.0.
  * Required Notice: Copyright © 2026 Franz Schwenninger
@@ -207,6 +207,10 @@ class FrankysNetworkCard extends HTMLElement {
               <div class="fsn-dialog-title"><span class="fsn-dot" data-dialog-dot></span><strong data-dialog-title>Mesh Node</strong></div>
               <div class="fsn-dialog-model" data-dialog-model>—</div>
               <div class="fsn-dialog-grid" data-dialog-grid></div>
+              <section class="fsn-dialog-clients" data-dialog-clients hidden>
+                <h4 data-dialog-client-heading>VERBUNDENE GERÄTE</h4>
+                <div class="fsn-dialog-client-list" data-dialog-client-list></div>
+              </section>
             </div>
           </div>
         </div>
@@ -243,7 +247,12 @@ class FrankysNetworkCard extends HTMLElement {
         .fsn-mesh-card{min-height:105px;padding:16px;color:inherit;text-align:left;display:flex;align-items:center;gap:12px;cursor:pointer}.fsn-mesh-card .fsn-copy strong{font-size:16px}.fsn-mesh-card .fsn-copy small{font-size:12px}
         .fsn-empty{opacity:.6}.fsn-status{right:3%;bottom:3%;display:flex;gap:8px;align-items:center;font-size:12px}
         .fsn-dialog{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(0,5,10,.34);backdrop-filter:blur(3px)}
-        .fsn-dialog[hidden]{display:none!important}.fsn-dialog-panel{position:relative;width:min(560px,86%);padding:22px;border:1px solid rgba(94,170,197,.30);border-radius:12px;background:linear-gradient(180deg,rgba(4,18,31,.97),rgba(2,10,19,.98));box-shadow:0 0 34px rgba(0,27,42,.32)}
+        .fsn-dialog[hidden]{display:none!important}.fsn-dialog-panel{position:relative;width:min(560px,86%);max-height:calc(100% - 68px);overflow:auto;padding:22px;border:1px solid rgba(94,170,197,.30);border-radius:12px;background:linear-gradient(180deg,rgba(4,18,31,.97),rgba(2,10,19,.98));box-shadow:0 0 34px rgba(0,27,42,.32)}
+        .fsn-dialog-clients{margin-top:15px;border-top:1px solid rgba(94,170,197,.22);padding-top:12px}
+        .fsn-dialog-clients[hidden]{display:none!important}
+        .fsn-dialog-clients h4{margin:0 0 9px;font-size:11px;letter-spacing:.14em;color:#5fc5e4}
+        .fsn-dialog-client-list{max-height:208px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+        .fsn-dialog-client-list>div{padding:7px 9px;background:rgba(4,27,43,.55);border:1px solid rgba(94,170,197,.2);border-radius:5px;font-size:12px;overflow-wrap:anywhere}
         .fsn-dialog-close{position:absolute;right:10px;top:8px;border:0;background:transparent;color:#eafaff;font-size:28px;cursor:pointer}.fsn-dialog-kicker{font-size:10px;letter-spacing:.18em;color:rgba(102,195,226,.66)}
         .fsn-dialog-title{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:24px}.fsn-dialog-model{margin-top:4px;color:rgba(143,213,236,.78);font-size:13px}
         .fsn-dialog-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}.fsn-dialog-item{padding:10px;border:1px solid rgba(105,164,185,.14);border-radius:8px;background:rgba(9,28,43,.40)}.fsn-dialog-item span{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;opacity:.58}.fsn-dialog-item strong{display:block;margin-top:4px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -273,6 +282,8 @@ class FrankysNetworkCard extends HTMLElement {
         .fsn-client-copy small{font-size:10px;color:#64cce9;white-space:nowrap}
         .fsn-mesh{left:20%;right:20%;top:29%;bottom:4%;display:block;pointer-events:none}
         .fsn-mesh-card{position:absolute;width:135px;min-height:40px;padding:5px 7px;gap:6px;pointer-events:auto;border:0;background:rgba(1,10,23,.55);border-radius:4px;transform:translate(-50%,-50%);box-shadow:none;backdrop-filter:blur(2px)}
+        .fsn-mesh-card::before{content:"";position:absolute;bottom:20px;left:50%;width:clamp(140px,14vw,215px);height:160px;transform:translateX(-50%);background:transparent;pointer-events:auto}
+        .fsn-mesh-card:focus-visible{outline:2px solid #5cecff;outline-offset:4px}
         .fsn-mesh-card .fsn-copy strong{font-size:12px;color:#dcfaff}
         .fsn-mesh-card .fsn-copy small{font-size:10px;color:#79d5ec}
         .fsn-mesh-card:nth-child(1){left:50%;top:50%;width:170px}
@@ -562,6 +573,46 @@ class FrankysNetworkCard extends HTMLElement {
       });
     }
 
+    const section = this._root.querySelector("[data-dialog-clients]");
+    const host = this._root.querySelector("[data-dialog-client-list]");
+    const heading = this._root.querySelector("[data-dialog-client-heading]");
+    if (section && host) {
+      section.hidden = true;
+      host.replaceChildren();
+      let names = [];
+      if (router) {
+        const devices = this._entity(this.config.entities?.clients)?.attributes?.devices;
+        if (Array.isArray(devices)) names = devices.map(d => String(d?.name || "").trim()).filter(Boolean);
+        const total = this._num(this.config.entities?.clients);
+        if (heading) heading.textContent = `SPEEDPORT-CLIENTS: ${new Set(names).size} Namen${total != null ? " / " + this._fmt(total,0) + " gesamt" : ""}`;
+        section.hidden = false;
+      } else if (!this.config.public_mode && Array.isArray(node?.clients)) {
+        names = node.clients.filter(d => d?.connection_state === "CONNECTED")
+          .map(d => String(d?.name || d?.ha_entity_id || "").trim()).filter(Boolean);
+        if (heading) heading.textContent = `CLIENTS AN DIESEM KNOTEN (${new Set(names).size})`;
+        section.hidden = false;
+      } else if (!this.config.public_mode && item.client_name) {
+        if (heading) heading.textContent = "CLIENTS AN DIESEM VERSTÄRKER";
+        const notice = document.createElement("div");
+        notice.textContent = "Speedport liefert keine Zuordnung der Clients zu diesem Verstärker.";
+        host.appendChild(notice);
+        section.hidden = false;
+      }
+      if (!section.hidden && host.children.length === 0) {
+        const unique = [...new Set(names)].sort((a,b) => a.localeCompare(b,undefined,{sensitivity:"base"}));
+        for (const name of unique.slice(0,100)) {
+          const row = document.createElement("div");
+          row.textContent = name;
+          row.title = name;
+          host.appendChild(row);
+        }
+        if (!unique.length) {
+          const empty = document.createElement("div");
+          empty.textContent = "Keine einzelnen Client-Namen verfügbar";
+          host.appendChild(empty);
+        }
+      }
+    }
     dialog.hidden = false;
   }
 
