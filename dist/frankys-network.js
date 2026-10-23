@@ -1,5 +1,5 @@
 /*
- * Frankys_Stuff Network v1.2.4
+ * Frankys_Stuff Network v1.2.5
  * Copyright © 2026 Franz Schwenninger
  * Licensed under the PolyForm Noncommercial License 1.0.0.
  * Required Notice: Copyright © 2026 Franz Schwenninger
@@ -352,14 +352,18 @@ class FrankysNetworkCard extends HTMLElement {
     return "unknown";
   }
 
-  _clientPresence(name) {
-    if (!name) return "unknown";
+  _speedportClientByName(name) {
+    if (!name) return null;
     const source = this._entity(this.config?.entities?.clients);
-    if (!source || ["unknown","unavailable"].includes(source.state)) return "unknown";
+    if (!source || ["unknown","unavailable"].includes(source.state)) return null;
     const devices = source.attributes?.devices;
-    if (!Array.isArray(devices)) return "unknown";
+    if (!Array.isArray(devices)) return null;
     const target = String(name).trim().toLocaleLowerCase();
-    return devices.some(d => String(d?.name || "").trim().toLocaleLowerCase() === target) ? "online" : "unknown";
+    return devices.find(d => String(d?.name || "").trim().toLocaleLowerCase() === target) || null;
+  }
+
+  _clientPresence(name) {
+    return this._speedportClientByName(name) ? "online" : "unknown";
   }
 
   _nodeConnectionStatus(item, node) {
@@ -543,12 +547,21 @@ class FrankysNetworkCard extends HTMLElement {
     };
     const totalClients = this._num(item.clients_entity || this.config.entities?.clients);
     const connectedClients = Array.isArray(node?.clients) ? node.clients.filter(x=>x?.connection_state==="CONNECTED").length : null;
+    const repeater = !router && !this.config.public_mode && !!item.client_name && !node;
+    const repeaterData = repeater ? this._speedportClientByName(item.client_name) : null;
     const rows = router ? [
       ["Routerstatus",routerStatus && !["unknown","unavailable"].includes(routerStatus) ? routerStatus : onlineLabel],
       ["Anschluss",item.connection_label || "—"],
       ["Download",rate("download")],
       ["Upload",rate("upload")],
       ["Clients",totalClients==null ? "—" : this._fmt(totalClients,0)],
+      ["Firmware",item.firmware || "—"]
+    ] : repeater ? [
+      ["Status",onlineLabel],
+      ["Gerätetyp",item.connection_label || "WLAN-Verstärker"],
+      ["IPv4-Adresse",repeaterData?.ip || "—"],
+      ["MAC-Adresse",repeaterData?.mac || "—"],
+      ["Erkennung",repeaterData ? "Speedport-Geräteliste" : "Nicht in aktueller Liste"],
       ["Firmware",item.firmware || "—"]
     ] : [
       ["Status",onlineLabel],
